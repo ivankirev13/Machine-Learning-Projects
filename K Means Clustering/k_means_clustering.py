@@ -1,45 +1,89 @@
 #import modules
-from time import time
 import numpy as np
-import matplotlib.pyplot as plt
-import sklearn
-from sklearn.preprocessing import scale
 from sklearn.datasets import load_digits
-from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+from time import time
 from sklearn import metrics
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
 #load data
-digits = load_digits()
-data = scale(digits.data) #scale all features to be in the range (-1,1)
+data, labels = load_digits(return_X_y=True)
+(n_samples, n_features), n_digits = data.shape, np.unique(labels).size
 
-#set target
-y = digits.target
+print(
+    f"# digits: {n_digits}; # samples: {n_samples}; # features {n_features}"
+)
 
-#number of clusters (10 digits)
-k = 10
-samples, features = data.shape
-n_digits = len(np.unique(digits.target))
+#Define our evaluation benchmark
+def bench_k_means(kmeans, name, data, labels):
+    """Benchmark to evaluate the KMeans initialization methods.
 
-#function for scoring our model
-def bench_k_means(estimator, name, data):
-    estimator.fit(data)
-    print('%-9s\t%i\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f'
-          % (name, estimator.inertia_,
-             metrics.homogeneity_score(y, estimator.labels_),
-             metrics.completeness_score(y, estimator.labels_),
-             metrics.v_measure_score(y, estimator.labels_),
-             metrics.adjusted_rand_score(y, estimator.labels_),
-             metrics.adjusted_mutual_info_score(y,  estimator.labels_),
-             metrics.silhouette_score(data, estimator.labels_,
-                                      metric='euclidean')))
+    Parameters
+    ----------
+    kmeans : KMeans instance
+        A :class:`~sklearn.cluster.KMeans` instance with the initialization
+        already set.
+    name : str
+        Name given to the strategy. It will be used to show the results in a
+        table.
+    data : ndarray of shape (n_samples, n_features)
+        The data to cluster.
+    labels : ndarray of shape (n_samples,)
+        The labels used to compute the clustering metrics which requires some
+        supervision.
+    """
+    t0 = time()
+    estimator = make_pipeline(StandardScaler(), kmeans).fit(data)
+    fit_time = time() - t0
+    results = [name, fit_time, estimator[-1].inertia_]
 
-#training model
-clf = KMeans(n_clusters=k, init="random", n_init=10)
-bench_k_means(clf, "1", data)
+    # Define the metrics which require only the true labels and estimator
+    # labels
+    clustering_metrics = [
+        metrics.homogeneity_score,
+        metrics.completeness_score,
+        metrics.v_measure_score,
+        metrics.adjusted_rand_score,
+        metrics.adjusted_mutual_info_score,
+    ]
+    results += [m(labels, estimator[-1].labels_) for m in clustering_metrics]
+
+    # The silhouette score requires the full dataset
+    results += [
+        metrics.silhouette_score(data, estimator[-1].labels_,
+                                 metric="euclidean", sample_size=300,)
+    ]
+
+    # Show the results
+    formatter_result = ("{:9s}\t{:.3f}s\t{:.0f}\t{:.3f}\t{:.3f}"
+                        "\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}")
+    print(formatter_result.format(*results))
+
+#Run the benchmark
+
+print(82 * '_')
+print('init\t\ttime\tinertia\thomo\tcompl\tv-meas\tARI\tAMI\tsilhouette')
+
+kmeans = KMeans(init="k-means++", n_clusters=n_digits, n_init=4,
+                random_state=0)
+bench_k_means(kmeans=kmeans, name="k-means++", data=data, labels=labels)
+
+kmeans = KMeans(init="random", n_clusters=n_digits, n_init=4, random_state=0)
+bench_k_means(kmeans=kmeans, name="random", data=data, labels=labels)
+
+pca = PCA(n_components=n_digits).fit(data)
+kmeans = KMeans(init=pca.components_, n_clusters=n_digits, n_init=1)
+bench_k_means(kmeans=kmeans, name="PCA-based", data=data, labels=labels)
+
+print(82 * '_')
+
+#Visualize the results on PCA-reduced data
 
 reduced_data = PCA(n_components=2).fit_transform(data)
-kmeans = KMeans(init='k-means++', n_clusters=n_digits, n_init=10)
+kmeans = KMeans(init="k-means++", n_clusters=n_digits, n_init=4)
 kmeans.fit(reduced_data)
 
 # Step size of the mesh. Decrease to increase the quality of the VQ.
@@ -57,19 +101,17 @@ Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
 Z = Z.reshape(xx.shape)
 plt.figure(1)
 plt.clf()
-plt.imshow(Z, interpolation='nearest',
+plt.imshow(Z, interpolation="nearest",
            extent=(xx.min(), xx.max(), yy.min(), yy.max()),
-           cmap=plt.cm.Paired,
-           aspect='auto', origin='lower')
+           cmap=plt.cm.Paired, aspect="auto", origin="lower")
 
 plt.plot(reduced_data[:, 0], reduced_data[:, 1], 'k.', markersize=2)
 # Plot the centroids as a white X
 centroids = kmeans.cluster_centers_
-plt.scatter(centroids[:, 0], centroids[:, 1],
-            marker='x', s=169, linewidths=3,
-            color='w', zorder=10)
-plt.title('K-means clustering on the digits dataset (PCA-reduced data)\n'
-          'Centroids are marked with white cross')
+plt.scatter(centroids[:, 0], centroids[:, 1], marker="x", s=169, linewidths=3,
+            color="w", zorder=10)
+plt.title("K-means clustering on the digits dataset (PCA-reduced data)\n"
+          "Centroids are marked with white cross")
 plt.xlim(x_min, x_max)
 plt.ylim(y_min, y_max)
 plt.xticks(())

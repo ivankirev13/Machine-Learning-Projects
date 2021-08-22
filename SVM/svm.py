@@ -1,30 +1,29 @@
-#import modules
-import sklearn
+# import modules
 from sklearn import datasets
 from sklearn import svm
 from sklearn import metrics
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
 
-#load data
+# load data
 cancer = datasets.load_breast_cancer()
 
-#features
+# features
 x = cancer.data
 
-#labels
+# labels
 y = cancer.target
 
-#split data into training and testing
-x_train, x_test, y_train, y_test = sklearn.model_selection.train_test_split(x, y, test_size=0.2)
+# split data into training and testing
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-#fit model (kernel can be linear, poly, rbf, sigmoid, precomputed)
+# fit model (kernel can be linear, poly, rbf, sigmoid, precomputed)
 clf = svm.SVC(kernel="linear")
 clf.fit(x_train, y_train)
 
-#calculate predicted values
+# calculate predicted values
 y_pred = clf.predict(x_test)
 
-#measure accuracy
+# measure accuracy
 accuracy = metrics.accuracy_score(y_test, y_pred)
 
 print(accuracy)

@@ -1,4 +1,4 @@
-#import modules
+# import modules
 import numpy as np
 from sklearn.datasets import load_digits
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
-#load data
+# oad data
 data, labels = load_digits(return_X_y=True)
 (n_samples, n_features), n_digits = data.shape, np.unique(labels).size
 
@@ -17,10 +17,10 @@ print(
     f"# digits: {n_digits}; # samples: {n_samples}; # features {n_features}"
 )
 
-#Define our evaluation benchmark
+
+# Define our evaluation benchmark
 def bench_k_means(kmeans, name, data, labels):
     """Benchmark to evaluate the KMeans initialization methods.
-
     Parameters
     ----------
     kmeans : KMeans instance
@@ -62,7 +62,8 @@ def bench_k_means(kmeans, name, data, labels):
                         "\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}")
     print(formatter_result.format(*results))
 
-#Run the benchmark
+
+# Run the benchmark
 
 print(82 * '_')
 print('init\t\ttime\tinertia\thomo\tcompl\tv-meas\tARI\tAMI\tsilhouette')
@@ -80,7 +81,7 @@ bench_k_means(kmeans=kmeans, name="PCA-based", data=data, labels=labels)
 
 print(82 * '_')
 
-#Visualize the results on PCA-reduced data
+# Visualize the results on PCA-reduced data
 
 reduced_data = PCA(n_components=2).fit_transform(data)
 kmeans = KMeans(init="k-means++", n_clusters=n_digits, n_init=4)

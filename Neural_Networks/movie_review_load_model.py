@@ -50,6 +50,6 @@ with open("lion_king.txt", encoding="utf-8") as f:
                                                      maxlen=250
                                                      )
         predict = model.predict(encode)
-        print("Review: " + line)
-        print("Encoding: " + encode)
-        print("Prediction: " + predict[0])  # 0 is negative and 1 positive
+        print(line)
+        print(encode)
+        print(predict[0])  # 0 is negative and 1 positive

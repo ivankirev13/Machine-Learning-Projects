@@ -1,5 +1,4 @@
-# import modules
-import numpy as np
+import numpy as np  # noqa
 from sklearn.datasets import load_digits
 import matplotlib.pyplot as plt
 from time import time
@@ -21,6 +20,7 @@ print(
 # Define our evaluation benchmark
 def bench_k_means(kmeans, name, data, labels):
     """Benchmark to evaluate the KMeans initialization methods.
+
     Parameters
     ----------
     kmeans : KMeans instance
